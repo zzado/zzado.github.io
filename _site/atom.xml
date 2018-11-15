@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.5.2">Jekyll</generator><link href="http://localhost:4000/atom.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-11-15T17:54:28+09:00</updated><id>http://localhost:4000/</id><title type="html">zzado Blog</title><author><name>zzado</name></author><entry><title type="html">ARM/MIPS 디버깅 환경 구성(feat.Qemu)</title><link href="http://localhost:4000/tips/2018/11/15/ARM-MIPS-%EB%94%94%EB%B2%84%EA%B9%85%ED%99%98%EA%B2%BD-%EA%B5%AC%EC%84%B1(feat.qemu)/" rel="alternate" type="text/html" title="ARM/MIPS 디버깅 환경 구성(feat.Qemu)" /><published>2018-11-15T00:00:00+09:00</published><updated>2018-11-15T00:00:00+09:00</updated><id>http://localhost:4000/tips/2018/11/15/ARM-MIPS-%EB%94%94%EB%B2%84%EA%B9%85%ED%99%98%EA%B2%BD-%EA%B5%AC%EC%84%B1(feat.qemu)</id><content type="html" xml:base="http://localhost:4000/tips/2018/11/15/ARM-MIPS-%EB%94%94%EB%B2%84%EA%B9%85%ED%99%98%EA%B2%BD-%EA%B5%AC%EC%84%B1(feat.qemu)/">&lt;blockquote&gt;
+  &lt;p&gt;qemu를 이용해서 x64 시스템에서 ARM/MIPS 바이너리를 실행하고 디버깅해보자!&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&quot;qemu-설치&quot;&gt;qemu 설치&lt;/h1&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;apt-get install qemu
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h1 id=&quot;가상-환경-구축&quot;&gt;가상 환경 구축&lt;/h1&gt;
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;https://people.debian.org/~aurel32/qemu/ 에서 원하는 환경의 커널이미지와 파일시스템 다운받기&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;명령어 실행&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;qemu-system-mips -M malta -kernel vmlinux-3.2.0-4-4kc-malta -hda debian_wheezy_mips_standard.qcow2 -append &lt;span class=&quot;s2&quot;&gt;&quot;root=/dev/sda1&quot;&lt;/span&gt; -redir tcp:8080::22 -nographic
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;qemu-system-arm -M versatilepb -kernel vmlinuz-3.2.0-4-versatile -hda debian_wheezy_armel_standard.qcow2 -initrd initrd.img-3.2.0-4-versatile -append &lt;span class=&quot;s2&quot;&gt;&quot;root=/dev/sda1&quot;&lt;/span&gt; -redir tcp:8080::22 -nographic
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;ssh root@localhost -p 8080 // pw : root&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;커널이미지에 맞는 파일시스템을 다운받아야함!(위 링크의 README.txt 참고)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;wheezy 파일시스템의 경우, 별다른 설정없이 네트워크 사용가능 // gdb 설치해서 디버깅하면 됌&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;최신 버전 qemu의 경우 -redir 옵션 대신 -net user,hostfwd=tcp::2222-:22 사용&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;바이너리-에뮬레이팅&quot;&gt;바이너리 에뮬레이팅&lt;/h1&gt;
+&lt;ul&gt;
+  &lt;li&gt;toolchain 설치(apt-get install gcc-arm-linux-gnueabi)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;qemu-arm -L &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;링킹될 라이브러리들 위치] ./[바이너리]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;ul&gt;
+  &lt;li&gt;(툴체인 이용) qemu-arm -L /usr/arm-linux-gnueabi ./[바이너리]&lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;(라이브러리 또는 파일시스템이 주어진 경우) choort 로 적절히 루트 경로를 바꿔주자&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;(참고) 위의 명령어로 안될경우 apt-get install qemu-user-static후, qemu-arm-static을 사용해보자&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;multi-arch-디버깅arm&quot;&gt;Multi-arch 디버깅(ARM)&lt;/h1&gt;
+&lt;ul&gt;
+  &lt;li&gt;qemu를 이용하여 원하는 아키텍쳐 바이너리를 디버깅 모드로 에뮬레이팅&lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;(디버깅 모드로 에뮬레이팅) qemu-arm -g [디버깅 포트] -L /usr/arm-linux-gnueabi ./[바이너리]&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;gdb-multiarch 설치(apt-get install gdb-multiarch)&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;gdb-multiarch 실행 및 attach
+    &lt;div class=&quot;language-sh highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;gdb-multiarch
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;set &lt;/span&gt;arch arm
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;target remote localhost:1234
+&lt;/code&gt;&lt;/pre&gt;
+    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;</content><author><name>zzado</name></author><category term="MIPS," /><category term="ARM" /><summary type="html">qemu를 이용해서 x64 시스템에서 ARM/MIPS 바이너리를 실행하고 디버깅해보자! qemu 설치 $ apt-get install qemu 가상 환경 구축 https://people.debian.org/~aurel32/qemu/ 에서 원하는 환경의 커널이미지와 파일시스템 다운받기 명령어 실행 $ qemu-system-mips -M malta -kernel vmlinux-3.2.0-4-4kc-malta -hda debian_wheezy_mips_standard.qcow2 -append &quot;root=/dev/sda1&quot; -redir tcp:8080::22 -nographic $ qemu-system-arm -M versatilepb -kernel vmlinuz-3.2.0-4-versatile -hda debian_wheezy_armel_standard.qcow2 -initrd initrd.img-3.2.0-4-versatile -append &quot;root=/dev/sda1&quot; -redir tcp:8080::22 -nographic ssh root@localhost -p 8080 // pw : root 커널이미지에 맞는 파일시스템을 다운받아야함!(위 링크의 README.txt 참고) wheezy 파일시스템의 경우, 별다른 설정없이 네트워크 사용가능 // gdb 설치해서 디버깅하면 됌 최신 버전 qemu의 경우 -redir 옵션 대신 -net user,hostfwd=tcp::2222-:22 사용 바이너리 에뮬레이팅 toolchain 설치(apt-get install gcc-arm-linux-gnueabi) qemu-arm -L [링킹될 라이브러리들 위치] ./[바이너리] (툴체인 이용) qemu-arm -L /usr/arm-linux-gnueabi ./[바이너리] (라이브러리 또는 파일시스템이 주어진 경우) choort 로 적절히 루트 경로를 바꿔주자 (참고) 위의 명령어로 안될경우 apt-get install qemu-user-static후, qemu-arm-static을 사용해보자 Multi-arch 디버깅(ARM) qemu를 이용하여 원하는 아키텍쳐 바이너리를 디버깅 모드로 에뮬레이팅 (디버깅 모드로 에뮬레이팅) qemu-arm -g [디버깅 포트] -L /usr/arm-linux-gnueabi ./[바이너리] gdb-multiarch 설치(apt-get install gdb-multiarch) gdb-multiarch 실행 및 attach $ gdb-multiarch $ set arch arm $ target remote localhost:1234</summary></entry></feed>
